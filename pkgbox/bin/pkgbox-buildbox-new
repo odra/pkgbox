@@ -1,0 +1,19 @@
+#!/bin/bash
+
+source lib/rootfs.sh
+source lib/oci.sh
+
+if [ -z "$PKGBOX_HOME" ]; then
+    PKGBOX_HOME=/tmp/pkgbox
+fi
+
+BASEDIR=$PKGBOX_HOME/buildroots
+NAME=$1
+
+if [ -z "$NAME" ]; then
+   echo "Missing buildroot name."
+  exit 1
+fi
+
+rootfs::gen $BASEDIR/$NAME
+oci::bundle::config::gen $BASEDIR/$NAME

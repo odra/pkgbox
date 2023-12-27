@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source lib/runtime.sh
+
+runtime::version

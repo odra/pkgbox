@@ -1,0 +1,27 @@
+#!/bin/bash
+source lib/container.sh
+
+if [ -z "$PKGBOX_HOME" ]; then
+    PKGBOX_HOME=/tmp/pkgbox
+fi
+
+BASEDIR=$PKGBOX_HOME/buildroots
+NAME=$1
+
+### Prepare
+container::create $BASEDIR/$NAME pkgbox-buildbox-$NAME
+###
+
+### Build
+container::exec pkgbox-buildbox-$NAME hostname
+container::exec pkgbox-buildbox-$NAME uname -a
+container::exec pkgbox-buildbox-$NAME ps
+###
+
+### Archive
+#
+###
+
+### Cleanup
+container::delete pkgbox-buildbox-$NAME
+###
