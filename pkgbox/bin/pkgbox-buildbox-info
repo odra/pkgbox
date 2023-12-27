@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ -z "$PKGBOX_HOME" ]; then
+    PKGBOX_HOME=/tmp/pkgbox
+fi
+
+NAME=$1
+
+if [ -z $NAME ]; then
+    echo "Provide a Buildbox name."
+    exit 1
+fi
+
+BASEDIR=$PKGBOX_HOME/buildroots/$NAME
+
+if [ ! -d $BASEDIR ]; then
+    echo "Builbox \"$NAME\" not found."
+    exit 1
+fi
+
+if [ ! -f $BASEDIR/config.json ]; then
+    echo "Builbox \"$NAME\" is corrupted."
+    exit 1
+fi
+
+cat $BASEDIR/config.json

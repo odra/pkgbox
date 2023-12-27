@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ -z "$PKGBOX_HOME" ]; then
+    PKGBOX_HOME=/tmp/pkgbox
+fi
+
+for buildbox in `ls $PKGBOX_HOME/buildroots`; do
+    if [ -d $PKGBOX_HOME/buildroots/$buildbox ]; then
+        echo $buildbox
+    fi
+done
