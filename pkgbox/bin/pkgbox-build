@@ -7,15 +7,24 @@ fi
 
 BASEDIR=$PKGBOX_HOME/buildroots
 NAME=$1
+SPEC_DIR=$2
+
+if [ -z $NAME ]; then
+    echo "Missing buildbox name."
+    exit 1
+fi
+
+if [ -z $SPEC_DIR ]; then
+    echo "Missing spec dir path."
+    exit 1
+fi
 
 ### Prepare
-container::create $BASEDIR/$NAME pkgbox-buildbox-$NAME
+container::create $BASEDIR/$NAME pkgbox-buildbox-$NAME $SPEC_DIR
 ###
 
 ### Build
-container::exec pkgbox-buildbox-$NAME hostname
-container::exec pkgbox-buildbox-$NAME uname -a
-container::exec pkgbox-buildbox-$NAME ps
+container::exec pkgbox-buildbox-$NAME /tmp/pkgbox/build/pkgbox.spec.bash pkgbox::prepare
 ###
 
 ### Archive

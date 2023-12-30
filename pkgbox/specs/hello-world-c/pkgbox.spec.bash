@@ -1,7 +1,7 @@
 #!/bin/bash
 
-pkgbox::prep() {
-    dnf install -y gcc make
+pkgbox::prepare() {
+    dnf --releasever 39 install -y gcc make
     make prepare
 }
 
@@ -14,5 +14,10 @@ pkgbox::install() {
 }
 
 pkgbox::cleanup() {
+   dnf remove -y gcc make
    make clean
 }
+
+if [ ! -z "$1" ]; then
+    $1
+fi

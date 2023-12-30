@@ -16,6 +16,7 @@ oci::bundle::config::gen() {
     cfg=$(echo $cfg | jq '.process.args = ["sleep", "infinity"]')
     cfg=$(echo $cfg | jq '.root.readonly = false')
     cfg=$(echo $cfg | jq '.process.terminal = false')
+    cfg=$(echo $cfg | jq ".mounts[.mounts | length] |= . + {\"destination\": \"/tmp/pkgbox/build\", \"options\": [\"rbind\"], \"source\": \"$path/volumes/build\"}")
 
     echo $cfg | jq > $path/config.json
 }
