@@ -1,0 +1,48 @@
+#!/bin/bash
+source lib/pkg.sh
+
+if [ -z "$PKGBOX_HOME" ]; then
+    PKGBOX_HOME=/tmp/pkgbox
+fi
+
+SPEC_DIR=$1
+
+if [ -z "$SPEC_DIR" ]; then
+  echo "Missing positional argument: SPEC_DIR."
+  exit 1
+fi
+
+echo "Using spec dir \"$SPEC_DIR\""
+
+if [ ! -f "$SPEC_DIR/pkgbox.spec.bash" ]; then
+  echo "Missing spec file \"$SPEC_DIR/pkgbox.spec.bash\"."
+fi
+
+echo "Using spec file \"$SPEC_DIR/pkgbox.spec.bash\""
+
+source $SPEC_DIR/pkgbox.spec.bash
+
+echo "Parent Layers: ${PKGBOX_DEPENDS[@]}"
+
+PKGBOX_BUILD_DIR=$(mktemp -d)
+
+echo "Build Dir: $PKGBOX_BUILD_DIR"
+
+mkdir -p $PKGBOX_BUILD_DIR/rootfs
+for diff in ${PKGBOX_DEPENDS[@]}; do
+  cp -R $PKGBOX_HOME/buildboxes/$diff/rootfs/* $PKGBOX_BUILD_DIR/rootfs
+done
+
+source $SPEC_DIR/pkgbox.spec.bash
+
+export -f pkgbox::pkg::prepare
+chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::prepare
+
+export -f pkgbox::pkg::build
+chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::build
+
+export -f pkgbox::pkg::install
+chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::install
+
+export -f pkgbox::pkg::cleanup
+chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::cleanup

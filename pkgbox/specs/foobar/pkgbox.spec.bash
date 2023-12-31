@@ -3,22 +3,17 @@
 pkgbox::pkg::depends "pkgbox-base"
 
 pkgbox::pkg::prepare() {
-    dnf \
-      --releasever 39 \
-      install -y gcc make
-
-    #make prepare
+    mkdir -p /etc/foobar
 }
 
 pkgbox::pkg::build() {
-    make build
+    touch /etc/foobar/build.lock
 }
 
 pkgbox::pkg::install() {
-    make install
+    echo 'foobar' > /etc/foobar/build.log
 }
 
 pkgbox::pkg::cleanup() {
-   dnf remove -y gcc make
-   make clean
+   rm /etc/foobar/build.lock
 }
