@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+import sys
+
+file = sys.argv[1]
+
+with open(file, 'r') as f:
+    lines = f.readlines()
+
+for line in lines:
+    l = line.replace('\n', '').strip()
+
+    if l.startswith('> ./'):
+        print(l.split('> ./')[1])
+
+    if l.startswith('< ./'):
+        print(l.split('< ./')[1] + '.wh')

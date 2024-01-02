@@ -33,16 +33,30 @@ for diff in ${PKGBOX_DEPENDS[@]}; do
   cp -R $PKGBOX_HOME/buildboxes/$diff/rootfs/* $PKGBOX_BUILD_DIR/rootfs
 done
 
-source $SPEC_DIR/pkgbox.spec.bash
+cfg=$(cat etc/config.json)
+read -r -d '' userdata << EOM
+{ 
+  "destination": "/opt/pkgbox-build",
+  "type": "bind",
+  "source": "$PKGBOX_BUILD_DIR/userdata/pkgbox-build",
+  "options": [
+    "bind",
+    "rprivate"
+  ]
+}
+EOM
+cfg=$(echo $cfg | jq ".mounts[.mounts | length] |= . + $userdata")
+echo $cfg | jq > $PKGBOX_BUILD_DIR/config.json
 
-export -f pkgbox::pkg::prepare
-chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::prepare
+mkdir -p  $PKGBOX_BUILD_DIR/{userdata,builddata}
+cp -aR $SPEC_DIR $PKGBOX_BUILD_DIR/userdata/pkgbox-build
 
-export -f pkgbox::pkg::build
-chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::build
+(cd /$PKGBOX_BUILD_DIR/rootfs; tree -ialf -I pkgbox-build) > $PKGBOX_BUILD_DIR/builddata/before.tree
 
-export -f pkgbox::pkg::install
-chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::install
+crun run --bundle=$PKGBOX_BUILD_DIR pkgbox-build-$(basename $SPEC_DIR)
 
-export -f pkgbox::pkg::cleanup
-chroot $PKGBOX_BUILD_DIR/rootfs /bin/bash -c pkgbox::pkg::cleanup
+(cd /$PKGBOX_BUILD_DIR/rootfs; tree -ialf -I pkgbox-build) > $PKGBOX_BUILD_DIR/builddata/after.tree
+
+diff $PKGBOX_BUILD_DIR/builddata/before.tree $PKGBOX_BUILD_DIR/builddata/after.tree > $PKGBOX_BUILD_DIR/builddata/tree.diff
+
+./bin/pkgbox-tree-diff $PKGBOX_BUILD_DIR/builddata/tree.diff > $PKGBOX_BUILD_DIR/builddata/rootfs.diff.txt
