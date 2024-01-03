@@ -7,5 +7,5 @@ All commands are located in the "bin" folder and should be invoked from this dir
 
 ## Dependencies
 
-* runc: container runtime
+* crun: container runtime
 * jq: oci json data manipulation
