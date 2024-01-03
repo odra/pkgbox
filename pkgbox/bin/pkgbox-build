@@ -6,11 +6,17 @@ if [ -z "$PKGBOX_HOME" ]; then
 fi
 
 SPEC_DIR=$1
+BUILD_NAME=$2
 
 if [ -z "$SPEC_DIR" ]; then
   echo "Missing positional argument: SPEC_DIR."
   exit 1
 fi
+
+if [ -z "$BUILD_NAME" ]; then
+  echo "Missing positional argument: BUILD_NAME"
+ exit 1
+fi 
 
 echo "Using spec dir \"$SPEC_DIR\""
 
@@ -60,3 +66,18 @@ crun run --bundle=$PKGBOX_BUILD_DIR pkgbox-build-$(basename $SPEC_DIR)
 diff $PKGBOX_BUILD_DIR/builddata/before.tree $PKGBOX_BUILD_DIR/builddata/after.tree > $PKGBOX_BUILD_DIR/builddata/tree.diff
 
 ./bin/pkgbox-tree-diff $PKGBOX_BUILD_DIR/builddata/tree.diff > $PKGBOX_BUILD_DIR/builddata/rootfs.diff.txt
+
+mkdir -p $PKGBOX_BUILD_DIR/diff
+for f in $(cat $PKGBOX_BUILD_DIR/builddata/rootfs.diff.txt); do
+  (cd $PKGBOX_BUILD_DIR/rootfs; install -Dp $f $PKGBOX_BUILD_DIR/diff/$(dirname $f)/$(basename $f))
+done
+
+mkdir -p $PKGBOX_HOME/oci/layers/$BUILD_NAME
+cp -aR $PKGBOX_BUILD_DIR/diff $PKGBOX_HOME/oci/layers/$BUILD_NAME/
+(
+  cd $PKGBOX_HOME/oci/layers/$BUILD_NAME/diff;
+  tar --acls --xattrs -cvzf $PKGBOX_HOME/oci/layers/$BUILD_NAME.tar.gz .;
+)
+
+sha=$(sha256sum $PKGBOX_HOME/oci/layers/$BUILD_NAME.tar.gz | awk '{print $1}')
+mv $PKGBOX_HOME/oci/layers/$BUILD_NAME.tar.gz $PKGBOX_HOME/oci/layers/$sha.tar.gz
