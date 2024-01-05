@@ -6,4 +6,8 @@ if [ -z "$PKGBOX_HOME" ]; then
     PKGBOX_HOME=/tmp/pkgbox
 fi
 
+mkdir -p ${PKGBOX_HOME}/{oci/image-layers,artifacts}
+
 rootfs::gen $PKGBOX_HOME/buildboxes/pkgbox-base
+
+chown -R $(env | grep SUDO_USER | cut -d= -f2-) $PKGBOX_HOME

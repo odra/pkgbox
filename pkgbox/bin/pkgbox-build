@@ -51,18 +51,33 @@ rootfs::tree::snapshot $PKGBOX_BUILD_DIR after.tree
 
 rootfs::tree::diff $PKGBOX_BUILD_DIR
 
-mkdir -p $PKGBOX_HOME/oci/layers/$BUILD_NAME
-cp -aR $PKGBOX_BUILD_DIR/diff $PKGBOX_HOME/oci/layers/$BUILD_NAME/
+# mkdir -p $PKGBOX_HOME/oci/layers
+
+# oci image-layer archive
+# cp -aR $PKGBOX_BUILD_DIR/diff $PKGBOX_HOME/oci/layers/$BUILD_NAME/
 (
-  cd $PKGBOX_HOME/oci/layers/$BUILD_NAME/diff;
+  cd $PKGBOX_BUILD_DIR/diff;
   tar \
     --sort=name \
     --mtime='@0' \
     --xattrs \
     --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
     -cvf \
-    $PKGBOX_HOME/oci/layers/$BUILD_NAME.tar .;
+    $PKGBOX_BUILD_DIR/diff.tar .;
 )
 
-sha=$(sha256sum $PKGBOX_HOME/oci/layers/$BUILD_NAME.tar | awk '{print $1}')
-mv $PKGBOX_HOME/oci/layers/$BUILD_NAME.tar $PKGBOX_HOME/oci/layers/$sha.tar
+sha=$(sha256sum $PKGBOX_BUILD_DIR/diff.tar | awk '{print $1}')
+mv $PKGBOX_BUILD_DIR/diff.tar $PKGBOX_HOME/oci/image-layers/$sha.tar
+
+# artifact
+mkdir -p $PKGBOX_HOME/artifacts/$BUILD_NAME
+cp -aR $SPEC_DIR $PKGBOX_HOME/artifacts/$BUILD_NAME/src
+
+if [ ! -f $PKGBOX_HOME/artifacts/$BUILD_NAME/$sha.tar ]; then
+  ln -s $PKGBOX_HOME/oci/image-layers/$sha.tar $PKGBOX_HOME/artifacts/$BUILD_NAME/$sha.tar
+fi
+
+if [ -f $PKGBOX_HOME/artifacts/$BUILD_NAME/latest.tar ]; then
+  unlink $PKGBOX_HOME/artifacts/$BUILD_NAME/latest.tar
+fi
+ln -s $PKGBOX_HOME/oci/image-layers/$sha.tar $PKGBOX_HOME/artifacts/$BUILD_NAME/latest.tar
