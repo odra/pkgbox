@@ -24,6 +24,7 @@ pkgbox::pkg::install() {
 pkgbox::pkg::cleanup() {
    make clean
    dnf remove -y gcc make
+   dnf --releasever 39 clean all
 }
 
 if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
