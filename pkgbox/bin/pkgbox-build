@@ -51,10 +51,6 @@ rootfs::tree::snapshot $PKGBOX_BUILD_DIR after.tree
 
 rootfs::tree::diff $PKGBOX_BUILD_DIR
 
-# mkdir -p $PKGBOX_HOME/oci/layers
-
-# oci image-layer archive
-# cp -aR $PKGBOX_BUILD_DIR/diff $PKGBOX_HOME/oci/layers/$BUILD_NAME/
 (
   cd $PKGBOX_BUILD_DIR/diff;
   tar \

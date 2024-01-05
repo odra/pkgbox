@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [ "${BASH_SOURCE-}" = "$0" ]; then
+  echo "You must source this script: \$ source $0" >&2
+  exit 33
+fi
+
+leave() {
+  if [ ! -z "${OLD_PATH:+_}" ] ; then
+    PATH="$OLD_PATH"
+    export PATH
+    unset OLD_PATH
+  fi
+
+  if [ ! -z "${PKGBOX_ENV:+_}" ] ; then
+    unset PKGBOX_ENV
+  fi
+
+  hash -r 2>/dev/null
+
+  if ! [ -z "${OLD_PS1+_}" ] ; then
+        PS1="$OLD_PS1"
+        export PS1
+        unset OLD_PS1
+    fi
+}
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PKGBOX_ENV=$SCRIPT_DIR/../
+
+OLD_PATH=$PATH
+PATH="$PKGBOX_ENV/bin:$PATH"
+export path
+
+OLD_PS1="${PS1-}"
+PS1="(pkgbox) ${PS1-}"
+export PS1
+
+hash -r 2>/dev/null

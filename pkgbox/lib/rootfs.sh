@@ -89,7 +89,11 @@ rootfs::tree::diff() {
     $build_dir/builddata/after.tree \
     > $build_dir/builddata/tree.diff
 
-  ./bin/pkgbox-tree-diff $build_dir/builddata/tree.diff > $build_dir/builddata/rootfs.diff.txt
+  if [ ! -z "$PKGBOX_ENV" ]; then
+    pkgbox-tree-diff $build_dir/builddata/tree.diff > $build_dir/builddata/rootfs.diff.txt
+  else
+    ./bin/pkgbox-tree-diff $build_dir/builddata/tree.diff > $build_dir/builddata/rootfs.diff.txt
+  fi
 
   mkdir -p $build_dir/diff
   for f in $(cat $build_dir/builddata/rootfs.diff.txt); do

@@ -32,7 +32,14 @@ oci::runtime::config::gen() {
     exit 1
   fi
 
-  cfg=$(cat etc/config.json)
+  local cfg_path=""
+  if [ -z "$PKGBOX_ENV" ]; then
+    cfg_path="etc/config.json"
+   else
+     cfg_path="$PKGBOX_ENV/etc/config.json"
+  fi
+
+  cfg=$(cat $cfg_path)
   
   read -r -d '' userdata << EOM
 { 
