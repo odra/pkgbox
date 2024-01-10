@@ -5,6 +5,7 @@ description = "manage package building as oci layers"
 authors = ["odra <me@lrossetti.com>"]
 license = "MIT"
 readme = "README.md"
+include = ['assets/*']
 
 [tool.poetry.scripts]
 pkgbox = "pkgbox.cli:main"
