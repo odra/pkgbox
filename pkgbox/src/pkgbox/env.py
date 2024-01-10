@@ -34,8 +34,8 @@ def get_pkgbox_dirs() -> Dict[str, str]:
     }
 
     if (e := getvar('PKGBOX_HOME')):
-        paths['config_dir'] = e
-        paths['data_dir'] = e
+        paths['config_dir'] = f'{e}/config'
+        paths['data_dir'] = f'{e}/data'
         return paths
 
     # XDG env vars
@@ -89,4 +89,3 @@ def bootstrap(paths: Dict[str, str]) -> None:
         raise errors.PBError('OS error: {e.strerror}', e.errno)
     
     shutil.copyfile(crun_config_path, f'{paths["config_dir"]}/crun/config.json')
-
