@@ -39,9 +39,9 @@ def get_pkgbox_dirs() -> Dict[str, str]:
         return paths
 
     # XDG env vars
-    if (e := getvar('XDG_CONFIG_HOME') and not paths['config_dir']):
+    if (e := getvar('XDG_CONFIG_HOME')):
         paths['config_dir'] = f'{e}/pkgbox'
-    if (e := getvar('XDG_DATA_HOME') and not paths['data_dir']):
+    if (e := getvar('XDG_DATA_HOME')):
         paths['data_dir'] = f'{e}/pkgbox'
 
     # home env vars in case xdg fails
@@ -53,9 +53,9 @@ def get_pkgbox_dirs() -> Dict[str, str]:
 
     # defaults to /opt/pkgbox if nothing works
     if not paths['config_dir']:
-        paths['config_dir'] = '/opt/pkgbox'
+        paths['config_dir'] = '/opt/pkgbox/config'
     if not paths['data_dir']:
-        paths['data_dir'] = '/opt/pkgbox'
+        paths['data_dir'] = '/opt/pkgbox/data'
 
     return paths
 
