@@ -31,6 +31,9 @@ class PBError(Exception):
 
         It checks if both `message` and `errno` properties are the same.
         """
+        if other is None:
+            return False
+
         if self.message != other.message:
             return False
 

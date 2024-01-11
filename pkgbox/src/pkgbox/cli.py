@@ -1,11 +1,13 @@
 """
 The cli module is used to run the pkgbox main cli.
 """
+import os
 import sys
+import shutil
 
 import click
 
-from . import errors
+from . import errors, env
 
 
 @click.group
@@ -29,7 +31,13 @@ def init() -> None:
     """
     Handles the `pkgbox init` command.
     """
-    raise errors.PBNotImplementedError()
+    paths = env.get_pkgbox_dirs()
+
+    for k, v in paths.items():
+        click.echo(f'{k}: {v}')
+
+    env.ensure_pkgbox_dirs(paths)
+    env.bootstrap(paths)
 
 
 @cli.command
