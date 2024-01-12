@@ -45,7 +45,15 @@ def info() -> None:
     """
     Handles the `pkgbox info` command.
     """
-    raise errors.PBNotImplementedError()
+    paths = env.get_pkgbox_dirs()
+    
+    if not os.path.exists(f'{paths["config_dir"]}/crun/config.json'):
+        raise errors.PBError('Pkgbox not intialized. Please run `pkgbox init` first.')
+
+    for k, v in paths.items():
+        click.echo(f'{k}: {v}')
+
+    click.echo(f'crun base config: {paths["config_dir"]}/crun/config.json')
 
 
 @cli.command
