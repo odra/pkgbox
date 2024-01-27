@@ -13,6 +13,7 @@ pkgbox = "pkgbox.cli:main"
 [tool.poetry.dependencies]
 python = "^3.11"
 click = "^8.1.7"
+requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
