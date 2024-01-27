@@ -61,8 +61,8 @@ def info(image: Image) -> Manifest:
         tag=data['tag'],
         architecture=data['architecture'],
         layers=[Descriptor.from_str(s['blobSum']) for s in data['fsLayers']],
-        history=data['history'],
-        signatures=data['signatures'],
+        history=data.get('history', []),
+        signatures=data.get('signatures', []),
         digest=Descriptor.from_str(res.headers['docker-content-digest'])
     )
 

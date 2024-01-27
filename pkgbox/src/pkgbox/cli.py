@@ -4,10 +4,11 @@ The cli module is used to run the pkgbox main cli.
 import os
 import sys
 import shutil
+import pathlib
 
 import click
 
-from . import errors, env
+from . import errors, env, image
 
 
 @click.group
@@ -57,11 +58,20 @@ def info() -> None:
 
 
 @cli.command
-def build() -> None:
+@click.option('-i', '--image', 'image_name', default='registry.fedoraproject.org/fedora:39') 
+def build(image_name: str) -> None:
     """
     Handles the `pkgbox build` command.
     """
-    raise errors.PBNotImplementedError()
+    paths = env.get_pkgbox_dirs()
+    data_dir = paths['data_dir']
+    img = image.from_str(image_name)
+    manifest = image.info(img)
+    dest = pathlib.Path(f'{data_dir}/oci-layers')
+
+    click.echo(f'Fetching data from "{image_name}"...')
+    image.fetch(img, manifest, dest)
+    click.echo(f'Data fetched into {dest}')
 
 
 def main() -> None:
