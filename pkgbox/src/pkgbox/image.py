@@ -67,6 +67,13 @@ def info(image: Image) -> Manifest:
     )
 
 
+def layer_exists(layer: Descriptor, dest: pathlib.Path) -> bool:
+    """
+    Checks if a layer exists in dest.
+    """
+    return os.path.exists(f'{dest}/{layer.digest}.tar.gz')
+
+
 def fetch(image: Image, manifest: Manifest, dest: pathlib.Path) -> None:
     """
     Fecthes the image and its layers into the `dest` folder.
@@ -77,6 +84,8 @@ def fetch(image: Image, manifest: Manifest, dest: pathlib.Path) -> None:
     os.makedirs(str(dest), exist_ok=True)
 
     for layer in manifest.layers:
+        if layer_exists(layer, dest):
+            continue
         with requests.get(f'{baseurl}/blobs/{layer}', allow_redirects=True, stream=True) as stream:
             stream.raise_for_status()
             with open(f'{dest}/{layer.digest}.tar.gz', 'wb') as f:
