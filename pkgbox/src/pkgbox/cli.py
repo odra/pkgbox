@@ -63,15 +63,16 @@ def build(image_name: str) -> None:
     """
     Handles the `pkgbox build` command.
     """
-    paths = env.get_pkgbox_dirs()
-    data_dir = paths['data_dir']
-    img = image.from_str(image_name)
-    manifest = image.info(img)
-    dest = pathlib.Path(f'{data_dir}/oci-layers')
+    # paths = env.get_pkgbox_dirs()
+    # data_dir = paths['data_dir']
+    # img = image.from_str(image_name)
+    # manifest = image.info(img)
+    # dest = pathlib.Path(f'{data_dir}/oci-layers')
 
-    click.echo(f'Fetching data from "{image_name}"...')
-    image.fetch(img, manifest, dest)
-    click.echo(f'Data fetched into {dest}')
+    # click.echo(f'Fetching data from "{image_name}"...')
+    # image.fetch(img, manifest, dest)
+    # click.echo(f'Data fetched into {dest}')
+    raise errors.PBNotImplementedError()
 
 
 def main() -> None:
