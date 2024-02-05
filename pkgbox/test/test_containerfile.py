@@ -15,3 +15,6 @@ def test_loads(fixdir):
         data = f.read()
 
     assert expected == containerfile.loads(data)
+
+
+def test_instruction_from()
