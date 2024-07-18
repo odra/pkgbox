@@ -2,6 +2,7 @@
 Errors module which contains all error handling source code.
 """
 import errno
+from typing import Any
 
 
 class PBError(Exception):
@@ -53,3 +54,15 @@ class PBNotImplementedError(PBError):
         Create a new object instance of this error.
         """
         super(PBNotImplementedError, self).__init__('Not Implemented', errno.ENOSYS)
+
+
+class PBValidationError(PBError):
+    """
+    This error should be raised for data validation
+    errors.
+    """
+    def __init__(self) -> None:
+        """
+        Create a new object instance of this error.
+        """
+        super(PBNotImplementedError, self).__init__('Data Validation Error', errno.EBADMSG)
