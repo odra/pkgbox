@@ -8,7 +8,7 @@ import pathlib
 
 import click
 
-from . import errors, env, image
+from . import errors, env
 
 
 @click.group
@@ -46,15 +46,17 @@ def info() -> None:
     """
     Handles the `pkgbox info` command.
     """
-    paths = env.get_pkgbox_dirs()
-    
-    if not os.path.exists(f'{paths["config_dir"]}/crun/config.json'):
-        raise errors.PBError('Pkgbox not intialized. Please run `pkgbox init` first.')
+    raise errors.PBNotImplementedError()
 
-    for k, v in paths.items():
-        click.echo(f'{k}: {v}')
+    # paths = env.get_pkgbox_dirs()
+    # 
+    # if not os.path.exists(f'{paths["config_dir"]}/crun/config.json'):
+    #     raise errors.PBError('Pkgbox not intialized. Please run `pkgbox init` first.')
 
-    click.echo(f'crun base config: {paths["config_dir"]}/crun/config.json')
+    # for k, v in paths.items():
+    #     click.echo(f'{k}: {v}')
+
+    # click.echo(f'crun base config: {paths["config_dir"]}/crun/config.json')
 
 
 @cli.command
