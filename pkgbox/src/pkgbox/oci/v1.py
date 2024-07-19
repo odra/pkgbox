@@ -9,6 +9,19 @@ from typing import Any, Dict, List, Optional
 from pkgbox import errors
 
 
+MEDIA_TYPES: Dict[str, bool] = {
+    'application/vnd.oci.descriptor.v1+json': True,
+    'application/vnd.oci.layout.header.v1+json': True,
+    'application/vnd.oci.image.index.v1+json': True,
+    'application/vnd.oci.image.manifest.v1+json': True,
+    'application/vnd.oci.image.config.v1+json': True,
+    'application/vnd.oci.image.layer.v1.tar': True,
+    'application/vnd.oci.image.layer.v1.tar+gzip': True,
+    'application/vnd.oci.image.layer.nondistributable.v1.tar': True,
+    'application/vnd.oci.image.layer.nondistributable.v1.tar+gzip': True
+}
+
+
 @dataclass
 class MediaType:
     """
@@ -115,7 +128,6 @@ class Digest:
         return cls(*data.split(':'))
 
 
-
 @dataclass
 class Descriptor:
     """
@@ -132,20 +144,8 @@ class Descriptor:
     def __post_init__(self) -> None:
         """
         Post initialization method, used for field validaton.
-        """
-        allowed_media_types = {
-            'application/vnd.oci.descriptor.v1+json': True,
-            'application/vnd.oci.layout.header.v1+json': True,
-            'application/vnd.oci.image.index.v1+json': True,
-            'application/vnd.oci.image.manifest.v1+json': True,
-            'application/vnd.oci.image.config.v1+json': True,
-            'application/vnd.oci.image.layer.v1.tar': True,
-            'application/vnd.oci.image.layer.v1.tar+gzip': True,
-            'application/vnd.oci.image.layer.nondistributable.v1.tar': True,
-            'application/vnd.oci.image.layer.nondistributable.v1.tar+gzip': True
-        }
-
-        if not allowed_media_types.get(str(media_type)):
+        """ 
+        if not MEDIA_TYPES.get(str(media_type)):
             raise errors.PBValidationError()
 
 
