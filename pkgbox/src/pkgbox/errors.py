@@ -14,7 +14,7 @@ class PBError(Exception):
         """
         Create a new PBError object instance.
         """
-        super(PBError, self).__init__(message)
+        super().__init__(message)
 
         self.message = message
         self.errno = errno
@@ -53,7 +53,7 @@ class PBNotImplementedError(PBError):
         """
         Create a new object instance of this error.
         """
-        super(PBNotImplementedError, self).__init__('Not Implemented', errno.ENOSYS)
+        super().__init__('Not Implemented', errno.ENOSYS)
 
 
 class PBValidationError(PBError):
@@ -65,4 +65,4 @@ class PBValidationError(PBError):
         """
         Create a new object instance of this error.
         """
-        super(PBNotImplementedError, self).__init__('Data Validation Error', errno.EBADMSG)
+        super().__init__('Data Validation Error', errno.EBADMSG)

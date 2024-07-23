@@ -6,28 +6,51 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from . import common
 from pkgbox import errors
 
+LAYER_MEDIA_TYPES: Dict[str, bool] = {
+    'application/vnd.oci.image.layer.v1.tar': True,
+    'application/vnd.oci.image.layer.v1.tar+gzip': True,
+    'application/vnd.oci.image.layer.nondistributable.v1.tar': True,
+    'application/vnd.oci.image.layer.nondistributable.v1.tar+gzip': True    
+}
 
-MEDIA_TYPES: Dict[str, bool] = {
+CONFIG_MEDIA_TYPES: Dict[str, bool] = {
     'application/vnd.oci.descriptor.v1+json': True,
     'application/vnd.oci.layout.header.v1+json': True,
     'application/vnd.oci.image.index.v1+json': True,
     'application/vnd.oci.image.manifest.v1+json': True,
-    'application/vnd.oci.image.config.v1+json': True,
-    'application/vnd.oci.image.layer.v1.tar': True,
-    'application/vnd.oci.image.layer.v1.tar+gzip': True,
-    'application/vnd.oci.image.layer.nondistributable.v1.tar': True,
-    'application/vnd.oci.image.layer.nondistributable.v1.tar+gzip': True
+    'application/vnd.oci.image.config.v1+json': True
 }
 
 
+def validate_annotations(annotations: Dict[str, str]) -> None:
+    """
+    Validate annotations from OCI resources.
+
+    Raises `pkgbox.errors.PBValidationError` in case it fails its
+    validation process.
+    """
+    for k, v in annotations.items():
+        # fail if key is not a valid reverse domain name
+        if not common.is_valid_rdn(k):
+            raise errors.PBValidationError()
+        # fail using an oci  reverse domain name with an improper key
+        if common.is_reserved_rdn(k, validate=False) and not common.is_reserved_rdn(k):
+            raise errors.PBValidationError()
+        # fail if annotation value is not a string
+        if not isinstance(v, str):
+            raise errors.PBValidationError()
+
+
+MEDIA_TYPES: Dict[str, bool] = dict(**LAYER_MEDIA_TYPES, **CONFIG_MEDIA_TYPES)
 @dataclass
 class MediaType:
     """
     Upstream URL: https://github.com/opencontainers/image-spec/blob/v1.0/media-types.md
 
-    Represent an OCI MeidaType and follows rfc6838.
+    Represent an OCI MediaType and follows rfc6838.
     """
     top: str
     sub: str
@@ -71,6 +94,9 @@ class MediaType:
         """
         Create a new object from a RFC6838 media type string.
         """
+        if not MEDIA_TYPES.get(data):
+            raise errors.PBValidationError()
+
         p = '(^[a-zA-Z0-9]+)\/([a-zA-Z0-9\.]+)\+?([a-zA-Z0-9]+)?'
         m = re.match(p, data)
 
@@ -125,7 +151,12 @@ class Digest:
 
         - $HASH_ALGORITHM:$CONTENT_DIGEST
         """
-        return cls(*data.split(':'))
+        parts = data.split(':')
+
+        if len(parts) != 2:
+            raise errors.PBValidationError()
+
+        return cls(*parts)
 
 
 @dataclass
@@ -138,15 +169,29 @@ class Descriptor:
     media_type: MediaType
     digest: Digest
     size: int
-    urls: Optional[List[str]]
-    annotations: Optional[Dict[str, str]]
+    urls: List[str] = field(default_factory=lambda: list())
+    annotations: Dict[str, str] = field(default_factory=lambda: dict())
 
     def __post_init__(self) -> None:
         """
         Post initialization method, used for field validaton.
         """ 
-        if not MEDIA_TYPES.get(str(media_type)):
+        if not MEDIA_TYPES.get(str(self.media_type)):
             raise errors.PBValidationError()
+
+        url_pattern = re.compile(
+        r'^https?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'  # ...or ipv4
+        r'\[?[A-F0-9]*:[A-F0-9:]+\]?)'  # ...or ipv6
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        for url in self.urls:
+            if re.match(url_pattern, url) is None:
+                raise errors.PBValidationError()
+        
+        validate_annotations(self.annotations)
 
 
 @dataclass
@@ -154,17 +199,25 @@ class Manifest:
     """
     A dataclass that represents an OCI Image Manifest.
     """
-    schema_version: str = field(init=False)
-    name: str
-    tag: str
-    architecture: str
+    schema_version: int
+    config: Descriptor
     layers: List[Descriptor]
-    history: List[str]
-    signatures: Any
-    digest: Digest
-
+    annotations: Optional[Dict[str, str]] = field(default_factory=lambda: dict())
+    
     def __post_init__(self) -> None:
         """
         Post initialization setup, invoked after the class is instantiated.
+
+        Used for field validation.
         """
-        self.schema_version = 1
+        if self.schema_version != 2:
+            raise errors.PBValidationError()
+
+        if str(self.config.media_type) != 'application/vnd.oci.image.config.v1+json':
+            raise errors.PBValidationError()
+
+        for layer in self.layers:
+            if not LAYER_MEDIA_TYPES.get(str(layer.media_type)):
+                raise errors.PBValidationError()
+
+        validate_annotations(self.annotations)
