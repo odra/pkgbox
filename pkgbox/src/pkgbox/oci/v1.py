@@ -197,6 +197,8 @@ class Descriptor:
 @dataclass
 class Manifest:
     """
+    Upstream documentation: https://github.com/opencontainers/image-spec/blob/v1.0/manifest.md
+
     A dataclass that represents an OCI Image Manifest.
     """
     schema_version: int
