@@ -41,5 +41,3 @@ def test_is_reserved_rdn_noval_error():
     rdn = 'org.opencontainer.image.foobar'
 
     assert common.is_reserved_rdn(rdn, validate=False) is False
-
-

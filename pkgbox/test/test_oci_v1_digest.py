@@ -74,5 +74,7 @@ def test_from_str_ok():
 
 
 def test_from_str_err():
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Digest.from_str('sha18843d7f92416211de9ebb963ff4ce28125932878')
+
+    assert err.value.data.get('digest') is not None

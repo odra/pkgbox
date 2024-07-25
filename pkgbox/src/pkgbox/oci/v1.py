@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from . import common
 from pkgbox import errors
 
+
 LAYER_MEDIA_TYPES: Dict[str, bool] = {
     'application/vnd.oci.image.layer.v1.tar': True,
     'application/vnd.oci.image.layer.v1.tar+gzip': True,
@@ -24,6 +25,8 @@ CONFIG_MEDIA_TYPES: Dict[str, bool] = {
     'application/vnd.oci.image.config.v1+json': True
 }
 
+MEDIA_TYPES: Dict[str, bool] = dict(**LAYER_MEDIA_TYPES, **CONFIG_MEDIA_TYPES)
+
 
 def validate_annotations(annotations: Dict[str, str]) -> None:
     """
@@ -35,16 +38,15 @@ def validate_annotations(annotations: Dict[str, str]) -> None:
     for k, v in annotations.items():
         # fail if key is not a valid reverse domain name
         if not common.is_valid_rdn(k):
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(**{f'annotations["{k}"]': 'invalid RDN format'})
         # fail using an oci  reverse domain name with an improper key
         if common.is_reserved_rdn(k, validate=False) and not common.is_reserved_rdn(k):
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(**{f'annotations["{k}"]': 'invalid OCI reserved RDN key'})
         # fail if annotation value is not a string
         if not isinstance(v, str):
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(**{f'annotations["{k}"]': 'value is not a string'})
 
 
-MEDIA_TYPES: Dict[str, bool] = dict(**LAYER_MEDIA_TYPES, **CONFIG_MEDIA_TYPES)
 @dataclass
 class MediaType:
     """
@@ -95,9 +97,9 @@ class MediaType:
         Create a new object from a RFC6838 media type string.
         """
         if not MEDIA_TYPES.get(data):
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(media_type=f'unsupported media type: {data}')
 
-        p = '(^[a-zA-Z0-9]+)\/([a-zA-Z0-9\.]+)\+?([a-zA-Z0-9]+)?'
+        p = r'(^[a-zA-Z0-9]+)\/([a-zA-Z0-9\.]+)\+?([a-zA-Z0-9]+)?'
         m = re.match(p, data)
 
         return cls(*m.groups())
@@ -154,7 +156,7 @@ class Digest:
         parts = data.split(':')
 
         if len(parts) != 2:
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(digest='failed to parse digest string')
 
         return cls(*parts)
 
@@ -177,7 +179,7 @@ class Descriptor:
         Post initialization method, used for field validaton.
         """ 
         if not MEDIA_TYPES.get(str(self.media_type)):
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(**{'digest.media_type': f'unsupported media type: {self.media_type}'})
 
         url_pattern = re.compile(
         r'^https?://'  # http:// or https://
@@ -189,11 +191,10 @@ class Descriptor:
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         for url in self.urls:
             if re.match(url_pattern, url) is None:
-                raise errors.PBValidationError()
+                raise errors.PBValidationError(**{'url': f'invalid url format: {url}'})
         
         validate_annotations(self.annotations)
-
-
+        
 @dataclass
 class Manifest:
     """
@@ -213,13 +214,13 @@ class Manifest:
         Used for field validation.
         """
         if self.schema_version != 2:
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(**{'schema_version': f'unsupported value: {self.schema_version}'})
 
         if str(self.config.media_type) != 'application/vnd.oci.image.config.v1+json':
-            raise errors.PBValidationError()
+            raise errors.PBValidationError(**{'config.media_type': f'unsupported config media type: {self.config.media_type}'})
 
-        for layer in self.layers:
+        for idx, layer in enumerate(self.layers):
             if not LAYER_MEDIA_TYPES.get(str(layer.media_type)):
-                raise errors.PBValidationError()
+                raise errors.PBValidationError(**{f'layers[{idx}].media_type': f'unsupported layer media type: {layer.media_type}'})
 
         validate_annotations(self.annotations)

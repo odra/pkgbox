@@ -75,5 +75,7 @@ def test_from_str_ok():
 
 
 def test_from_str_err():
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         MediaType.from_str('application/vnd.oci.image.config.v1')
+
+    assert err.value.data.get('media_type') is not None
