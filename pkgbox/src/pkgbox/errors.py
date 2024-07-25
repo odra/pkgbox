@@ -2,7 +2,7 @@
 Errors module which contains all error handling source code.
 """
 import errno
-from typing import Any
+from typing import Any, Dict, Optional
 
 
 class PBError(Exception):
@@ -61,8 +61,19 @@ class PBValidationError(PBError):
     This error should be raised for data validation
     errors.
     """
-    def __init__(self) -> None:
+    data: Dict[str, str] = {}
+
+    def __init__(self, **kwargs: str) -> None:
         """
         Create a new object instance of this error.
+
+        An optional list of `keys` can be provided to identify which keys/properties/fields failed
+        to be validated; `keys` will also be available as a object instance variable.
         """
-        super().__init__('Data Validation Error', errno.EBADMSG)
+        if len(kwargs) == 0:
+            super().__init__('Data validation error', errno.EBADMSG)
+            return
+
+        super().__init__(f'Data validation error for: {kwargs.keys()}', errno.EBADMSG)
+
+        self.data = kwargs

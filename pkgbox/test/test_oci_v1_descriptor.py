@@ -31,33 +31,41 @@ def test_init_full_ok():
 
 
 def test_init_urls_err():
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Descriptor(MediaType.from_str('application/vnd.oci.image.layer.v1.tar'),
                    Digest.from_str('sha1:8843d7f92416211de9ebb963ff4ce28125932878'),
                    10,
                    ['https:://github.com/odra/pkgbox'])
 
+    assert err.value.data.get('url') is not None
+
 
 def test_init_annotations_key_err():
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Descriptor(MediaType.from_str('application/vnd.oci.image.layer.v1.tar'),
                    Digest.from_str('sha1:8843d7f92416211de9ebb963ff4ce28125932878'),
                    10,
                    ['https://github.com/odra/pkgbox'],
                    {'http://org.pkgbox.artifact': 'true'})
 
+    assert err.value.data.get('annotations["http://org.pkgbox.artifact"]') is not None
 
-def test_init_annotations_key_err():
-    with pytest.raises(errors.PBValidationError):
+
+def test_init_annotations_val_err():
+    with pytest.raises(errors.PBValidationError) as err:
         Descriptor(MediaType.from_str('application/vnd.oci.image.layer.v1.tar'),
                    Digest.from_str('sha1:8843d7f92416211de9ebb963ff4ce28125932878'),
                    10,
                    ['https://github.com/odra/pkgbox'],
                    {'org.pkgbox.artifact': True})
 
+    assert err.value.data.get('annotations["org.pkgbox.artifact"]') is not None
+
 
 def test_init_mediatype_err():
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Descriptor(MediaType.from_str('application/vnd.oci.image.layer.v1.tar+xml'),
                    Digest.from_str('sha1:8843d7f92416211de9ebb963ff4ce28125932878'),
                    10)
+
+    assert err.value.data.get('media_type') is not None

@@ -46,22 +46,28 @@ def test_manifest_ok(ociv1_config, ociv1_layers):
 
 
 def test_manifest_schema_version_error(ociv1_config, ociv1_layers):
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Manifest(1, ociv1_config, ociv1_layers)
+
+    assert err.value.data.get('schema_version') is not None
 
 
 def test_manifest_media_type_error(ociv1_config, ociv1_layers):
     ociv1_config.media_type = 'application/vnd.oci.image.layer.v1.tar'
     
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Manifest(2, ociv1_config, ociv1_layers)
+
+    assert err.value.data.get('config.media_type') is not None
 
 
 def test_manifest_layers_error(ociv1_config, ociv1_layers):
     ociv1_layers[0].media_type = 'application/vnd.oci.image.config.v1+json'
     
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Manifest(2, ociv1_config, ociv1_layers)
+
+    assert err.value.data.get('layers[0].media_type') is not None
 
 
 def test_manifest_annotations_ok(ociv1_config, ociv1_layers, ociv1_annotations):
@@ -81,34 +87,40 @@ def test_manifest_annotations_ok(ociv1_config, ociv1_layers, ociv1_annotations):
 def test_manifest_annotations_format_error(ociv1_config, ociv1_layers, ociv1_annotations):
     ociv1_annotations['org-pkgbox.artifact'] = 'true'
 
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Manifest(
                 2,
                 ociv1_config,
                 ociv1_layers,
                 ociv1_annotations
         )
+
+    assert err.value.data.get('annotations["org-pkgbox.artifact"]') is not None
 
 
 def test_manifest_annotations_oci_error(ociv1_config, ociv1_layers, ociv1_annotations):
     ociv1_annotations['org.opencontainers.image.foo'] = 'bar'
 
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Manifest(
                 2,
                 ociv1_config,
                 ociv1_layers,
                 ociv1_annotations
         )
+
+    assert err.value.data.get('annotations["org.opencontainers.image.foo"]') is not None
 
 
 def test_manifest_annotations_value_error(ociv1_config, ociv1_layers, ociv1_annotations):
     ociv1_annotations['org.pkgbox.artifact'] = True
 
-    with pytest.raises(errors.PBValidationError):
+    with pytest.raises(errors.PBValidationError) as err:
         Manifest(
                 2,
                 ociv1_config,
                 ociv1_layers,
                 ociv1_annotations
         )
+
+    assert err.value.data.get('annotations["org.pkgbox.artifact"]') is not None
