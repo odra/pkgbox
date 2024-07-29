@@ -7,6 +7,8 @@ from typing import Any
 
 from dockerfile_parse import DockerfileParser, util
 
+from pkgbox import errors
+
 
 class ContainerfileParser(DockerfileParser):
     """
@@ -14,7 +16,7 @@ class ContainerfileParser(DockerfileParser):
     to handle for force cached content to be handled in
     a specific way.
     """
-    def __init__(self, *args: Any, **kwargs Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Create a new object instance, forcing the
         parent class parser to used the cached content.
@@ -40,14 +42,17 @@ class ContainerfileParser(DockerfileParser):
         self.cached_content = util.b2u(content)
 
 
-def from_filepath(path: pathlib.Path) -> ContainerfileParser:
+def from_path(path: pathlib.Path) -> ContainerfileParser:
     """
     Return a parser object from a given path, where path
     should be the location of a Containerfile.
     """
     parser = ContainerfileParser()
 
-    with open(path.resolve(), 'r') as f:
-        parser.content = f.read()
+    try:
+        with open(path.resolve(), 'r') as f:
+            parser.content = f.read()
+    except OSError as e:
+        raise errors.PBError(e.strerror, e.errno)
 
     return parser
