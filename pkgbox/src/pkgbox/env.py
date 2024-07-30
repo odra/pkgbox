@@ -2,6 +2,8 @@ import os
 import shutil
 from typing import Dict, Optional
 
+from . import errors
+
 
 def getvar(name: str, defaults: Optional[str] = None) -> Optional[str]:
     """
