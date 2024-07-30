@@ -8,7 +8,7 @@ import pathlib
 
 import click
 
-from . import errors, env
+from . import errors, env, containerfile
 
 
 @click.group
@@ -42,22 +42,38 @@ def init() -> None:
 
 
 @cli.command
-def info() -> None:
+@click.argument('path', type=click.Path(exists=True, readable=True))
+def inspect(path: click.Path) -> None:
     """
-    Handles the `pkgbox info` command.
+    Inspects a Containerfile and pritns its parsed output.
     """
-    raise errors.PBNotImplementedError()
+    c = containerfile.from_path(pathlib.Path(path))
 
-    # paths = env.get_pkgbox_dirs()
-    # 
-    # if not os.path.exists(f'{paths["config_dir"]}/crun/config.json'):
-    #     raise errors.PBError('Pkgbox not intialized. Please run `pkgbox init` first.')
-
-    # for k, v in paths.items():
-    #     click.echo(f'{k}: {v}')
-
-    # click.echo(f'crun base config: {paths["config_dir"]}/crun/config.json')
-
+    # base image
+    click.echo(f'Base Image: {c.base_image}')
+    # labels
+    click.echo(f'Labels ({len(c.labels)}):')
+    for k, v in c.labels.items():
+        click.echo(f'\tName: {k}')
+        click.echo(f'\tValue: {v}')
+    # env vars
+    click.echo(f'Env Vars ({len(c.env_vars)}):')
+    for k, v in c.env_vars.items():
+        click.echo(f'\tName: {k}')
+        click.echo(f'\tValue: {v}')
+    # env vars
+    click.echo(f'Build Args ({len(c.build_args)}):')
+    for k, v in c.build_args.items():
+        click.echo(f'\tName: {k}')
+        click.echo(f'\tValue: {v}')
+    # instructions
+    click.echo(f'Insructions ({len(c.instructions)}):')
+    for instruction in c.instructions:
+        click.echo(f'\tType: {instruction.name}')
+        click.echo(f'\tValue: {instruction.value}')
+        click.echo(f'\tDigest: {instruction.digest}')
+        click.echo(f'\tEphemeral {instruction.is_ephemeral()}')
+    
 
 @cli.command
 @click.option('-i', '--image', 'image_name', default='registry.fedoraproject.org/fedora:39') 
