@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import pytest
 from click.testing import CliRunner
@@ -17,13 +18,26 @@ def tmpdir(tmp_path):
 
 
 @pytest.fixture
-def fixdir():
-    realpath = os.path.realpath(__file__)
+def basedir():
+    return os.path.dirname(os.path.realpath(__file__))
 
-    return os.path.join(os.path.dirname(realpath), 'fixtures')
+
+@pytest.fixture
+def fixdir(basedir):
+    return os.path.join(basedir, 'fixtures')
+
+
+@pytest.fixture
+def testdir(basedir):
+    return f'{basedir}/testdir'
 
 
 @pytest.fixture
 def manifest_json(fixdir):
     with open(f'{fixdir}/manifest.json', 'r') as f:
         return f.read()
+
+
+@pytest.fixture
+def uid():
+    return str(uuid.uuid4())
