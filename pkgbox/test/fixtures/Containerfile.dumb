@@ -1,0 +1,10 @@
+FROM quay.io/fedora/fedora:latest
+
+LABEL foo=bar
+
+ARG TARGETARCH=amd64
+
+ENV HOME=/root
+
+# org.pkgbox.artifact=true
+RUN echo 'keepme' > /opt/build.file

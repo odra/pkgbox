@@ -19,7 +19,9 @@ OCI_RDNS_KEYS: Dict[str, str] = {
     'documentation': True,
     'authors': True,
     'licenses': True,
-    'ref.name': True
+    'ref.name': True,
+    'base.digest': True,
+    'base.name': True
 }
 
 

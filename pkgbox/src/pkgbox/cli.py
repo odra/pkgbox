@@ -3,12 +3,15 @@ The cli module is used to run the pkgbox main cli.
 """
 import os
 import sys
+import json
+import uuid
 import shutil
 import pathlib
+import subprocess
 
 import click
 
-from . import errors, env, containerfile
+from . import containerfile, env, errors, image, rootfs
 
 
 @click.group
@@ -76,21 +79,108 @@ def inspect(path: click.Path) -> None:
     
 
 @cli.command
-@click.option('-i', '--image', 'image_name', default='registry.fedoraproject.org/fedora:39') 
-def build(image_name: str) -> None:
+@click.argument('path', type=click.Path(exists=True, readable=True))
+@click.option('--build-id', default=str(uuid.uuid4()),  help='build unique id or name')
+def build(path: click.Path, build_id: str) -> None:
     """
     Handles the `pkgbox build` command.
     """
-    # paths = env.get_pkgbox_dirs()
-    # data_dir = paths['data_dir']
-    # img = image.from_str(image_name)
-    # manifest = image.info(img)
-    # dest = pathlib.Path(f'{data_dir}/oci-layers')
+    # TODO: split this abomination into smaller functions
+    # initialize env variables
+    pkgbox_dirs = env.get_pkgbox_dirs()
+    data_dir = pkgbox_dirs['data_dir']
+    cfg_dir = pkgbox_dirs['config_dir']
+    # read and parse containerfile 
+    containerfile_path = pathlib.Path(path)
+    cfile = containerfile.from_path(containerfile_path)
+    
+    # retrieve base_image manifest info
+    click.echo(f'[INFO] Reading manifest data for "{cfile.base_image}"...')
+    base_image_manifest = image.get_manifest(cfile.base_image)
+    # setup image/build env dir
+    click.echo(f'Using build id/name: {build_id}') 
+    os.makedirs(f'{data_dir}/builds/{build_id}', exist_ok=True)
+    shutil.copy(f'{cfg_dir}/crun/config.json', f'{data_dir}/builds/{build_id}/config.json')
+    os.makedirs(f'{data_dir}/builds/{build_id}/rootfs', exist_ok=True)
+    # download and extract layers into the build env folder
+    layers_dir = f'{data_dir}/oci-layers'
+    os.makedirs(layers_dir, exist_ok=True)
+    click.echo(f'OCI Layers dir: {layers_dir}')
 
-    # click.echo(f'Fetching data from "{image_name}"...')
-    # image.fetch(img, manifest, dest)
-    # click.echo(f'Data fetched into {dest}')
-    raise errors.PBNotImplementedError()
+    # fetch and apply layers from base image
+    # TODO: move this logic to the instruction loop
+    click.echo(f'Found {len(base_image_manifest.layers)} layer(s).')
+    image_name_parts = cfile.base_image.split('/')
+    reg = image_name_parts[0]
+    namespace, tag = '/'.join(image_name_parts[1:]).split(':')
+    image.fetch_layers(reg, namespace, base_image_manifest.layers, layers_dir)
+    image.apply_layers(base_image_manifest.layers, layers_dir,  f'{data_dir}/builds/{build_id}/rootfs')
+    rootfs_path = pathlib.Path(f'{data_dir}/builds/{build_id}/rootfs')
+
+    # run containerfile instructions
+    is_artifact = False
+    for idx, instruction in enumerate(cfile.instructions):
+        if instruction.name == 'RUN':
+            if idx > 0 and cfile.instructions[idx-1].name == 'COMMENT':
+                if cfile.instructions[idx-1].value == 'org.pkgbox.artifact=true':
+                    is_artifact = True
+            crun_cfg = json_read(f'{data_dir}/builds/{build_id}/config.json')
+            crun_cfg['process']['args'] = ['bash', '-c', instruction.value]
+            json_write(f'{data_dir}/builds/{build_id}/config.json', crun_cfg)
+            rf1 = rootfs.from_path(rootfs_path)
+            result = run_instruction(f'{data_dir}/builds/{build_id}', build_id)
+            rf2 = rootfs.from_path(rootfs_path)
+            instruction_digest = instruction.digest.split(':')[1]
+            logfile = f'{data_dir}/builds/{build_id}/{instruction_digest}.log'
+            
+            if result.stderr:
+                with open(f'{logfile}.err', 'w+') as f:
+                    f.write(f'{instruction.value}\n')
+                    f.write(f'{result.stderr}\n')
+            else:
+                with open(f'{logfile}.out', 'w+') as f:
+                    f.write(f'{instruction.value}\n')
+                    f.write(f'{result.stdout}\n')
+            
+            if result.returncode != 0 or result.stderr:
+                raise errors.PBError('Instruction failed: {instruction.value}')
+            
+            diff = rootfs.mgr.diff(rf1, rf2)
+            if len(diff) == 0:
+                continue
+            
+            if is_artifact:
+                diff_dir = f'{data_dir}/builds/{build_id}/rootfs.{instruction_digest}'
+                click.echo(f'Identified rootfs changes, archiving instruction {instruction_digest}')
+                os.makedirs(diff_dir, exist_ok=True)               
+                for added in diff['add']:
+                    os.makedirs( f'{diff_dir}{os.path.dirname(added)}' , exist_ok=True)
+                    shutil.copy2(f'{data_dir}/builds/{build_id}/rootfs{added}', f'{diff_dir}{added}')
+                rootfs.mgr.archive(rootfs.from_path(pathlib.Path(diff_dir)), f'{diff_dir}.tar.gz')
+                shutil.rmtree(diff_dir)
+                is_artifact = False
+
+
+def run_instruction(build_dir: pathlib.Path, build_id: str):
+    cmd = [
+        'crun',
+        'run',
+        '--config', f'{build_dir}/config.json',
+        '--bundle', build_dir,
+        f'{build_id}-build'
+    ]
+    
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def json_read(path):
+    with open(path, 'r') as f:
+        return json.load(f)
+
+
+def json_write(path, data):
+    with open(path, 'w+') as f:
+        json.dump(data, f, indent=4)
 
 
 def main() -> None:

@@ -1,6 +1,7 @@
 import os
 import pathlib
 import hashlib
+import tarfile
 from typing import Any, Dict
 
 import dictdiffer
@@ -112,3 +113,12 @@ def _diff_parse(field, values, p=''):
             return _diff_parse(v, p + f'/{k}')
         else:
             return f'{p}/{k}'
+
+
+def archive(rootfs: types.RootFS, dest: pathlib.Path):
+    with tarfile.open(str(dest), "w:gz") as tar:
+        for root, dirs, files in os.walk(str(rootfs.path)):
+            arcname = os.path.relpath(root, start=str(rootfs.path))
+            for file in files:
+                file_path = os.path.join(root, file)
+                tar.add(file_path, arcname=os.path.join(arcname, file))
