@@ -11,6 +11,7 @@ import subprocess
 
 import click
 
+from .builders.builder_crun import CrunBuilder
 from . import containerfile, env, errors, image, rootfs
 
 
