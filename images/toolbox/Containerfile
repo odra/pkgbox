@@ -1,0 +1,10 @@
+FROM quay.io/fedora/fedora-toolbox:41
+
+# dev dependencies
+RUN dnf install -y \
+make vim \
+python3 python3-devel poetry \
+mypy python3-pytest python3-pytest-sugar
+
+# runtime dependencies
+RUN dnf install -y python3-click podman
