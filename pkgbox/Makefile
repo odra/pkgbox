@@ -7,13 +7,21 @@ MYPY_OPTS := --strict
 PYTEST_OPTS :=
 
 # use poetry's virtualenv tooling if POETRY=Y
-ifeq ($(POETRY), Y)
+ifeq ($(POETRY),Y)
 	PY := poetry run python
 	MYPY := poetry run mypy
 else
 	PY := PYTHONPATH=$$PYTHONPATH:${SRC_DIR} $(shell which python)
 	MYPY := $(shell which mypy)
 endif
+
+.PHONY: vars 
+vars:
+	@echo POETRY=${POETRY}
+	@echo PY=${PY}
+	@echo MYPY=${MYPY}
+	@echo MYPY_OPTS=${MYPY_OPTS}
+	@echo PYTEST_OPTS=${PYTEST_OPTS}
 
 .PHONY: test/mypy
 test/mypy:
